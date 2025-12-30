@@ -8,16 +8,33 @@ on:
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up MinGW (g++)
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: mingw-w64-x86_64-gcc
+
+    - name: Build Lumina.exe
+      shell: msys2 {0}
+      run: |
+        g++ src/main.cpp \
+            src/interpreter/*.cpp \
+            src/ast/*.cpp \
+            src/runtime/*.cpp \
+            src/utils/*.cpp \
+            src/stdlib/*.cpp \
+            src/web/*.cpp \
+            -I. -pthread -std=c++17 \
+            -o Lumina.exe
+
+    - name: Upload executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: Lumina-Windows
+        path: Lumina.exe
