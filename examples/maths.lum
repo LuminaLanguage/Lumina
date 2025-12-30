@@ -1,0 +1,22 @@
+print("=== Math Example ===")
+
+var a = 10
+var b = 3
+
+// basic operations
+print("a + b = " + (a + b))
+print("a - b = " + (a - b))
+print("a * b = " + (a * b))
+print("a / b = " + (a / b))
+
+// math function
+func square(x) {
+    return x * x
+}
+
+var result = square(a)
+print("Square of a = " + result)
+
+// complex expression
+var c = (a + b) * (b - 2) / 2
+print("Complex expression result = " + c)
