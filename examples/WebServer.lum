@@ -1,0 +1,46 @@
+print("=== WebServer Example ===")
+
+server = StdWeb::createServer(8080)
+
+// middleware
+server.use(func(req, res) {
+    print("Incoming request: " + req.method + " " + req.path)
+})
+
+// GET route
+server.get("/", func(req, res) {
+    res.send("Hello from Lumina WebServer!")
+})
+
+// POST route
+server.post("/submit", func(req, res) {
+    print("POST body: " + req.body)
+    res.json("{\"status\":\"ok\"}")
+})
+
+// PUT route
+server.put("/update", func(req, res) {
+    res.send("PUT received")
+})
+
+// DELETE route
+server.del("/delete", func(req, res) {
+    res.send("DELETE received")
+})
+
+// PATCH route
+server.patch("/update", func(req, res) {
+    res.send("PATCH received")
+})
+
+// OPTIONS route
+server.options("/update", func(req, res) {
+    res.send("OPTIONS received")
+})
+
+// HEAD route
+server.head("/check", func(req, res) {
+    res.send("HEAD OK")
+})
+
+print("Server running on port 8080...")
