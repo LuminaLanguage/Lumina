@@ -1,0 +1,32 @@
+print("=== Normal Example ===")
+
+var name = "Lumina"
+var age = 5
+
+print("Hello, " + name + "! You are " + age + " years old.")
+
+// function
+func greet(person) {
+    print("Greetings, " + person + "!")
+}
+
+greet(name)
+
+// for loop
+for i = 1 to 5 {
+    print("Loop iteration: " + i)
+}
+
+// if/else
+if age > 10 {
+    print("You are older than 10")
+} else {
+    print("You are 10 or younger")
+}
+
+// while loop
+var count = 0
+while count < 3 {
+    print("Count is " + count)
+    count = count + 1
+}
