@@ -2,13 +2,16 @@
 #include <string>
 #include <functional>
 #include <map>
-#include "../runtime/Request.h"
-#include "../runtime/Response.h"
+#include "Request.h"
+#include "Response.h"
+#include <crow.h>
 
 class WebServer {
 public:
     int port;
-    std::map<std::string, std::function<void(Request&, Response&)>> routes;
+    crow::SimpleApp app;
+
     void listen(int p);
-    void on(const std::string& method, const std::string& path, std::function<void(Request&, Response&)> callback);
+    void on(const std::string& method, const std::string& path,
+            std::function<void(Request&, Response&)> callback);
 };
