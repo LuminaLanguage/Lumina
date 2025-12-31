@@ -1,5 +1,5 @@
 #include "FunctionExecutor.h"
-#include "../interpreter/Executor.h"
+#include "interpreter/Executor.h"
 
 void FunctionExecutor::execute(FunctionNode* node, Environment& env) {
     env.set(node->name, Variable()); // placeholder for function object
