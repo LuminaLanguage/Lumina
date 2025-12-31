@@ -2,7 +2,7 @@
 #include "Node.h"
 #include <vector>
 #include <string>
-#include "../ast/Statement.h"
+#include "ast/Statement.h"
 
 class FunctionNode : public Node {
 public:
