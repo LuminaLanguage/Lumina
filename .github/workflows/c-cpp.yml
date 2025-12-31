@@ -30,8 +30,10 @@ jobs:
             src/utils/*.cpp \
             src/stdlib/*.cpp \
             src/web/*.cpp \
-            -I. -pthread -std=c++17 \
+            -Isrc \
+            -pthread -std=c++17 \
             -o Lumina.exe
+ 
 
     - name: Upload executable
       uses: actions/upload-artifact@v4
