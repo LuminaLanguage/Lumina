@@ -7,36 +7,41 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-and-push:
     runs-on: windows-latest
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        persist-credentials: true  # Needed to push back to repo
 
-    - name: Set up MinGW (g++)
+    - name: Set up MSYS2 with MinGW and Boost
       uses: msys2/setup-msys2@v2
       with:
         update: true
-        install: mingw-w64-x86_64-gcc
+        install: mingw-w64-x86_64-gcc mingw-w64-x86_64-boost
 
     - name: Build Lumina.exe
       shell: msys2 {0}
       run: |
+        export PATH="/mingw64/bin:$PATH"
         g++ src/main.cpp \
-            src/interpreter/*.cpp \
-            src/ast/*.cpp \
-            src/runtime/*.cpp \
-            src/utils/*.cpp \
-            src/stdlib/*.cpp \
-            src/web/*.cpp \
+            $(find src/interpreter -name '*.cpp') \
+            $(find src/ast -name '*.cpp') \
+            $(find src/runtime -name '*.cpp') \
+            $(find src/utils -name '*.cpp') \
+            $(find src/stdlib -name '*.cpp') \
             -Isrc \
-            -pthread -std=c++17 \
+            -I/mingw64/include \
+            -L/mingw64/lib \
+            -lboost_system -lboost_date_time -lboost_filesystem \
+            -std=c++17 \
             -o Lumina.exe
- 
 
-    - name: Upload executable
-      uses: actions/upload-artifact@v4
-      with:
-        name: Lumina-Windows
-        path: Lumina.exe
+    - name: Commit and push executable
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add Lumina.exe
+        git commit -m "CI: update Lumina.exe"
+        git push origin HEAD:main
