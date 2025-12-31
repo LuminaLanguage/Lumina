@@ -1,109 +1,55 @@
 #include "runtime/WebServer.h"
-#include <cstring>
 
-// Internal CivetWeb handler
-int WebServer::civetHandler(struct mg_connection *conn, void *cbdata) {
-    WebServer* self = static_cast<WebServer*>(cbdata);
-
-    const struct mg_request_info *req_info = mg_get_request_info(conn);
-
-    // Read request body
-    char buf[1024];
-    int n = mg_read(conn, buf, sizeof(buf));
-    std::string body;
-    if (n > 0) body.assign(buf, n);
-
-    Request req;
-    Response res;
-
-    req.path = req_info->request_uri;
-    req.method = req_info->request_method;
-    req.body = body;
-
-    // Run middlewares
-    for (auto &mw : self->middlewares) mw(req, res);
-
-    // Call route handler if exists
-    auto it = self->routes.find(req.path);
-    if (it != self->routes.end()) {
-        it->second(req, res);
-    }
-
-    // Send response
-    mg_printf(conn,
-        "HTTP/1.1 %d OK\r\n"
-        "Content-Type: text/plain\r\n"
-        "Content-Length: %zu\r\n\r\n%s",
-        res.status, res.body.size(), res.body.c_str());
-
-    return 1; // Mark handled
-}
-
-// Start server on port
 void WebServer::listen(int port) {
-    std::string portStr = std::to_string(port);
-    const char *options[] = {
-        "listening_ports", portStr.c_str(),
-        nullptr
-    };
-
-    ctx = mg_start(nullptr, this, options);
-
-    if (!ctx) {
-        std::cerr << "Failed to start server on port " << port << std::endl;
-    }
+    app.port(port).multithreaded().run();
 }
 
-// Stop server
-void WebServer::stop() {
-    if (ctx) mg_stop(ctx);
-    ctx = nullptr;
-}
-
-// Add middleware
 void WebServer::use(std::function<void(Request&, Response&)> fn) {
     middlewares.push_back(fn);
 }
 
-// Register a route
-void WebServer::registerRoute(const std::string &path, std::function<void(Request&, Response&)> fn) {
-    routes[path] = fn;
+void WebServer::handleRoute(const crow::request& req_crow, std::function<void(Request&, Response&)> fn, const std::string& method) {
+    Request req;
+    Response res;
+    req.method = method;
+    req.path = req_crow.url;
+    req.body = req_crow.body;
+
+    for(auto& mw : middlewares) mw(req, res);
+    fn(req, res);
 }
 
-// GET route
-void WebServer::get(const std::string &path, std::function<void(Request&, Response&)> fn) {
-    registerRoute(path, fn);
+// GET
+void WebServer::get(const std::string& path, std::function<void(Request&, Response&)> fn) {
+    CROW_ROUTE(app, path)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "GET"); return ""; });
 }
 
-// POST route
-void WebServer::post(const std::string &path, std::function<void(Request&, Response&)> fn) {
-    registerRoute(path, fn);
+// POST
+void WebServer::post(const std::string& path, std::function<void(Request&, Response&)> fn) {
+    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Post)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "POST"); return ""; });
 }
 
-// PUT route
-void WebServer::put(const std::string &path, std::function<void(Request&, Response&)> fn) {
-    registerRoute(path, fn);
+// PUT
+void WebServer::put(const std::string& path, std::function<void(Request&, Response&)> fn) {
+    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Put)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "PUT"); return ""; });
 }
 
-// PATCH route
-void WebServer::patch(const std::string &path, std::function<void(Request&, Response&)> fn) {
-    registerRoute(path, fn);
+// PATCH
+void WebServer::patch(const std::string& path, std::function<void(Request&, Response&)> fn) {
+    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Patch)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "PATCH"); return ""; });
 }
 
-// DELETE route
-void WebServer::del(const std::string &path, std::function<void(Request&, Response&)> fn) {
-    registerRoute(path, fn);
+// OPTIONS
+void WebServer::options(const std::string& path, std::function<void(Request&, Response&)> fn) {
+    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Options)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "OPTIONS"); return ""; });
 }
 
-// OPTIONS route
-void WebServer::options(const std::string &path, std::function<void(Request&, Response&)> fn) {
-    registerRoute(path, fn);
+// DELETE
+void WebServer::del(const std::string& path, std::function<void(Request&, Response&)> fn) {
+    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Delete)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "DELETE"); return ""; });
 }
 
-// HEAD route (simulate via GET, empty body)
-void WebServer::head(const std::string &path, std::function<void(Request&, Response&)> fn) {
-    registerRoute(path, [fn](Request &req, Response &res){
-        fn(req, res);
-        res.body = ""; // HEAD should have no body
-    });
+// HEAD
+void WebServer::head(const std::string& path, std::function<void(Request&, Response&)> fn) {
+    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Head)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "HEAD"); return ""; });
 }
