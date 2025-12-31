@@ -1,7 +1,7 @@
 #pragma once
 #include "Node.h"
 #include <vector>
-#include "../ast/Statement.h"
+#include "ast/Statement.h"
 #include <string>
 
 class ForNode : public Node {
