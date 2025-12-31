@@ -2,7 +2,9 @@
 #include <string>
 #include <functional>
 #include <vector>
-#include <crow_all.h>
+#include <map>
+#include <iostream>
+#include "civetweb.h"
 
 class Request {
 public:
@@ -16,25 +18,34 @@ class Response {
 public:
     int status = 200;
     std::string body;
+
     void send(const std::string& data) { body = data; }
     void json(const std::string& data) { body = data; }
 };
 
 class WebServer {
 private:
-    crow::SimpleApp app;
+    struct mg_context *ctx;
     std::vector<std::function<void(Request&, Response&)>> middlewares;
+    std::map<std::string, std::function<void(Request&, Response&)>> routes;
 
-    void handleRoute(const crow::request& req_crow, std::function<void(Request&, Response&)> fn, const std::string& method);
+    static int civetHandler(struct mg_connection *conn, void *cbdata);
+
+    void registerRoute(const std::string &path, std::function<void(Request&, Response&)> fn);
 
 public:
+    WebServer() : ctx(nullptr) {}
+
     void listen(int port);
+    void stop();
+
     void use(std::function<void(Request&, Response&)> fn);
-    void get(const std::string& path, std::function<void(Request&, Response&)> fn);
-    void post(const std::string& path, std::function<void(Request&, Response&)> fn);
-    void put(const std::string& path, std::function<void(Request&, Response&)> fn);
-    void patch(const std::string& path, std::function<void(Request&, Response&)> fn);
-    void options(const std::string& path, std::function<void(Request&, Response&)> fn);
-    void del(const std::string& path, std::function<void(Request&, Response&)> fn);
-    void head(const std::string& path, std::function<void(Request&, Response&)> fn);
+
+    void get(const std::string &path, std::function<void(Request&, Response&)> fn);
+    void post(const std::string &path, std::function<void(Request&, Response&)> fn);
+    void put(const std::string &path, std::function<void(Request&, Response&)> fn);
+    void patch(const std::string &path, std::function<void(Request&, Response&)> fn);
+    void del(const std::string &path, std::function<void(Request&, Response&)> fn);
+    void options(const std::string &path, std::function<void(Request&, Response&)> fn);
+    void head(const std::string &path, std::function<void(Request&, Response&)> fn);
 };
