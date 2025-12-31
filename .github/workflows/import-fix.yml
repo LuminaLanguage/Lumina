@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the repo
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -21,9 +21,14 @@ jobs:
         with:
           node-version: '20'
 
-      # 3. Fix C++ include paths (self-contained)
-      - name: Fix C++ include paths
+      # 3. Ensure scripts folder exists
+      - name: Ensure scripts folder
+        run: mkdir -p scripts
+
+      # 4. Create the JS script in scripts/import-fixes.js
+      - name: Write import-fixes.js
         run: |
+          cat << 'EOF' > scripts/import-fixes.js
           const fs = require('fs');
           const path = require('path');
 
@@ -41,11 +46,12 @@ jobs:
               } else if (file.endsWith('.cpp') || file.endsWith('.h')) {
                 let content = fs.readFileSync(fullPath, 'utf8');
 
+                // Fix local includes
                 content = content.replace(/#include "(.*?)"/g, (match, includeFile) => {
                   const includePath = path.join(dir, includeFile);
                   if (fs.existsSync(includePath)) {
                     const relativePath = path.relative(path.dirname(fullPath), includePath);
-                    return `#include "${relativePath.replace(/\\/g, "/")}"`;
+                    return `#include "${relativePath.replace(/\\/g, '/')}"`;
                   }
                   return match;
                 });
@@ -57,8 +63,13 @@ jobs:
 
           fixIncludes(rootDir);
           console.log('Include paths fixed!');
+          EOF
 
-      # 4. Optional: commit back the changes
+      # 5. Run the JS script
+      - name: Run import-fixes.js
+        run: node scripts/import-fixes.js
+
+      # 6. Optional: commit changes
       - name: Commit and push changes
         run: |
           git config --global user.name "github-actions"
@@ -66,4 +77,3 @@ jobs:
           git add .
           git commit -m "Auto-fix C++ include paths" || echo "No changes to commit"
           git push
- 
