@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "../ast/Statement.h"
+#include "ast/Statement.h"
 
 class Function {
 public:
