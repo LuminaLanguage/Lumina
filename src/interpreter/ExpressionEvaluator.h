@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
-#include "../runtime/Environment.h"
-#include "../runtime/Variable.h"
+#include "runtime/Environment.h"
+#include "runtime/Variable.h"
 
 class ExpressionEvaluator {
 public:
