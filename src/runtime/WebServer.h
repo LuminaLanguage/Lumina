@@ -3,7 +3,7 @@
 #include <functional>
 #include <vector>
 #include <map>
-#include "httplib.h"  // cpp-httplib
+#include "civetweb.h"  // CivetWeb header
 
 class Request {
 public:
@@ -19,80 +19,89 @@ public:
     std::string body;
 
     void send(const std::string& data) { body = data; }
-    void json(const std::string& data) { body = data; }  // keep same as Crow version
+    void json(const std::string& data) { body = data; }
 };
 
 class WebServer {
 private:
-    httplib::Server server;
+    struct mg_context *ctx;
     std::vector<std::function<void(Request&, Response&)>> middlewares;
 
-    void handleRoute(const httplib::Request& req_ht, httplib::Response& res_ht,
-                     std::function<void(Request&, Response&)> fn,
-                     const std::string& method) 
-    {
+    // Internal route handler
+    static int routeHandler(struct mg_connection *conn, void *cbdata) {
+        WebServer *self = static_cast<WebServer*>(cbdata);
+
+        char buf[1024];
+        int n = mg_read(conn, buf, sizeof(buf));
+        std::string body;
+        if (n > 0) body.assign(buf, n);
+
+        mg_request_info *req_info = mg_get_request_info(conn);
+
         Request req;
         Response res;
+        req.path = req_info->request_uri;
+        req.method = req_info->request_method;
+        req.body = body;
 
-        req.path = req_ht.path;
-        req.method = method;
-        req.body = req_ht.body;
+        for (auto &mw : self->middlewares) mw(req, res);
 
-        for (auto& mw : middlewares) mw(req, res);
-        fn(req, res);
+        // Send response
+        mg_printf(conn,
+                  "HTTP/1.1 %d OK\r\n"
+                  "Content-Type: text/plain\r\n"
+                  "Content-Length: %zu\r\n\r\n%s",
+                  res.status, res.body.size(), res.body.c_str());
 
-        res_ht.status = res.status;
-        res_ht.set_content(res.body, "text/plain");
+        return 1; // Mark handled
     }
 
 public:
+    WebServer() : ctx(nullptr) {}
+
     void listen(int port) {
-        server.listen("0.0.0.0", port);
+        const char *options[] = {
+            "listening_ports", std::to_string(port).c_str(),
+            nullptr
+        };
+        ctx = mg_start(nullptr, this, options);
+    }
+
+    void stop() {
+        if (ctx) mg_stop(ctx);
+        ctx = nullptr;
     }
 
     void use(std::function<void(Request&, Response&)> fn) {
         middlewares.push_back(fn);
     }
 
-    void get(const std::string& path, std::function<void(Request&, Response&)> fn) {
-        server.Get(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
-            handleRoute(req, res, fn, "GET");
-        });
+    void get(const std::string &path, std::function<void(Request&, Response&)> fn) {
+        mg_set_request_handler(ctx, path.c_str(), routeHandler, this);
     }
 
-    void post(const std::string& path, std::function<void(Request&, Response&)> fn) {
-        server.Post(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
-            handleRoute(req, res, fn, "POST");
-        });
+    void post(const std::string &path, std::function<void(Request&, Response&)> fn) {
+        mg_set_request_handler(ctx, path.c_str(), routeHandler, this);
     }
 
-    void put(const std::string& path, std::function<void(Request&, Response&)> fn) {
-        server.Put(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
-            handleRoute(req, res, fn, "PUT");
-        });
+    void put(const std::string &path, std::function<void(Request&, Response&)> fn) {
+        mg_set_request_handler(ctx, path.c_str(), routeHandler, this);
     }
 
-    void patch(const std::string& path, std::function<void(Request&, Response&)> fn) {
-        server.Patch(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
-            handleRoute(req, res, fn, "PATCH");
-        });
+    void patch(const std::string &path, std::function<void(Request&, Response&)> fn) {
+        mg_set_request_handler(ctx, path.c_str(), routeHandler, this);
     }
 
-    void del(const std::string& path, std::function<void(Request&, Response&)> fn) {
-        server.Delete(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
-            handleRoute(req, res, fn, "DELETE");
-        });
+    void del(const std::string &path, std::function<void(Request&, Response&)> fn) {
+        mg_set_request_handler(ctx, path.c_str(), routeHandler, this);
     }
 
-    void options(const std::string& path, std::function<void(Request&, Response&)> fn) {
-        server.Options(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
-            handleRoute(req, res, fn, "OPTIONS");
-        });
+    void options(const std::string &path, std::function<void(Request&, Response&)> fn) {
+        mg_set_request_handler(ctx, path.c_str(), routeHandler, this);
     }
 
-    void head(const std::string& path, std::function<void(Request&, Response&)> fn) {
-        server.Head(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
-            handleRoute(req, res, fn, "HEAD");
-        });
+    // CivetWeb does not support HEAD directly; you can implement it via GET
+    void head(const std::string &path, std::function<void(Request&, Response&)> fn) {
+        mg_set_request_handler(ctx, path.c_str(), routeHandler, this);
     }
 };
