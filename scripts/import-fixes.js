@@ -45,8 +45,9 @@ function fixIncludes(dir) {
       if (headersMap[includeFile]) {
         const newPath = headersMap[includeFile]; // relative to src/
         if (newPath !== includeFile) {
+          const folderPath2 = path.basename(path.dirname(fullPath));
           modified = true;
-          return `#include "${newPath}"`;
+          return `#include "${newPath.replace("./", folderPath2.replace("src/", "").replace("/", "") + "/")}"`;
         }
       }
       return match;
