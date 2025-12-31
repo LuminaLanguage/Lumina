@@ -1,12 +1,11 @@
 #include "runtime/WebServer.h"
 #include <cstring>
-#include <iostream>
 
-// Internal CivetWeb handler for all routes
+// Internal CivetWeb handler
 int WebServer::civetHandler(struct mg_connection *conn, void *cbdata) {
     WebServer* self = static_cast<WebServer*>(cbdata);
 
-    mg_request_info *req_info = mg_get_request_info(conn);
+    const struct mg_request_info *req_info = mg_get_request_info(conn);
 
     // Read request body
     char buf[1024];
@@ -22,7 +21,7 @@ int WebServer::civetHandler(struct mg_connection *conn, void *cbdata) {
     req.body = body;
 
     // Run middlewares
-    for (auto& mw : self->middlewares) mw(req, res);
+    for (auto &mw : self->middlewares) mw(req, res);
 
     // Call route handler if exists
     auto it = self->routes.find(req.path);
@@ -40,7 +39,7 @@ int WebServer::civetHandler(struct mg_connection *conn, void *cbdata) {
     return 1; // Mark handled
 }
 
-// Listen on a port
+// Start server on port
 void WebServer::listen(int port) {
     std::string portStr = std::to_string(port);
     const char *options[] = {
@@ -55,12 +54,18 @@ void WebServer::listen(int port) {
     }
 }
 
+// Stop server
+void WebServer::stop() {
+    if (ctx) mg_stop(ctx);
+    ctx = nullptr;
+}
+
 // Add middleware
 void WebServer::use(std::function<void(Request&, Response&)> fn) {
     middlewares.push_back(fn);
 }
 
-// Generic route registration
+// Register a route
 void WebServer::registerRoute(const std::string &path, std::function<void(Request&, Response&)> fn) {
     routes[path] = fn;
 }
@@ -97,8 +102,8 @@ void WebServer::options(const std::string &path, std::function<void(Request&, Re
 
 // HEAD route (simulate via GET, empty body)
 void WebServer::head(const std::string &path, std::function<void(Request&, Response&)> fn) {
-    registerRoute(path, [fn](Request &req, Response &res) {
+    registerRoute(path, [fn](Request &req, Response &res){
         fn(req, res);
-        res.body = ""; // HEAD returns no body
+        res.body = ""; // HEAD should have no body
     });
 }
