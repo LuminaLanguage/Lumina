@@ -3,14 +3,17 @@ const path = require('path');
 
 const rootDir = path.resolve('src');
 
-// Recursively collect all header files
-function collectHeaders(dir, headers = {}) {
+// Collect all header files with paths relative to rootDir
+function collectHeaders(dir, base = '', headers = {}) {
   const files = fs.readdirSync(dir);
   for (const file of files) {
     const fullPath = path.join(dir, file);
     const stat = fs.statSync(fullPath);
-    if (stat.isDirectory()) collectHeaders(fullPath, headers);
-    else if (file.endsWith('.h')) headers[file] = fullPath;
+    if (stat.isDirectory()) {
+      collectHeaders(fullPath, path.join(base, file), headers);
+    } else if (file.endsWith('.h')) {
+      headers[file] = path.join(base, file).replace(/\\/g, '/'); // path relative to src/
+    }
   }
   return headers;
 }
@@ -35,26 +38,18 @@ function fixIncludes(dir) {
     let modified = false;
 
     content = content.replace(/#include ["<](.*?)[">]/g, (match, includeFile) => {
-      // Ignore system headers with paths
-      if (includeFile.includes('/') || includeFile.endsWith('.h') === false) return match;
+      // Ignore system headers
+      if (includeFile.includes('/')) return match;
 
-      let newPath = null;
-
-      // 1. Check same folder
-      const sameFolder = path.join(path.dirname(fullPath), includeFile);
-      if (fs.existsSync(sameFolder)) newPath = './' + includeFile;
-
-      // 2. Else, check anywhere in headersMap
-      else if (headersMap[includeFile]) {
-        newPath = path.relative(path.dirname(fullPath), headersMap[includeFile]).replace(/\\/g, '/');
+      // Check if header exists in headersMap
+      if (headersMap[includeFile]) {
+        const newPath = headersMap[includeFile]; // relative to src/
+        if (newPath !== includeFile) {
+          modified = true;
+          return `#include "${newPath}"`;
+        }
       }
-
-      if (newPath && newPath !== includeFile) {
-        modified = true;
-        return `#include "${newPath}"`;
-      }
-
-      return match; // leave as-is
+      return match;
     });
 
     if (modified) fs.writeFileSync(fullPath, content, 'utf8');
