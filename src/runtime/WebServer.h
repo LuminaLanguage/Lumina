@@ -2,6 +2,9 @@
 #include <string>
 #include <functional>
 #include <vector>
+#ifdef DELETE
+#undef DELETE
+#endif
 #include <crow_all.h>
 
 class Request {
