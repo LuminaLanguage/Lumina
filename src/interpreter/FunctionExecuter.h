@@ -1,6 +1,6 @@
 #pragma once
-#include "../ast/FunctionNode.h"
-#include "../runtime/Environment.h"
+#include "ast/FunctionNode.h"
+#include "runtime/Environment.h"
 
 class FunctionExecutor {
 public:
