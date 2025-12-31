@@ -1,6 +1,6 @@
 #include "ControlFlow.h"
-#include "../interpreter/Executor.h"
-#include "../interpreter/ExpressionEvaluator.h"
+#include "interpreter/Executor.h"
+#include "interpreter/ExpressionEvaluator.h"
 
 void ControlFlow::executeIf(IfNode* node, Environment& env) {
     Variable cond = ExpressionEvaluator::evaluate(node->condition, env);
