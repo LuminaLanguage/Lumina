@@ -1,55 +1,85 @@
-#include "runtime/WebServer.h"
+#include "WebServer.h"
 
+// Listen on the given port
 void WebServer::listen(int port) {
-    app.port(port).multithreaded().run();
+    server.listen("0.0.0.0", port);
 }
 
+// Add a middleware function
 void WebServer::use(std::function<void(Request&, Response&)> fn) {
     middlewares.push_back(fn);
 }
 
-void WebServer::handleRoute(const crow::request& req_crow, std::function<void(Request&, Response&)> fn, const std::string& method) {
+// Handle a route request
+void WebServer::handleRoute(const httplib::Request& req_ht, httplib::Response& res_ht,
+                            std::function<void(Request&, Response&)> fn,
+                            const std::string& method) 
+{
     Request req;
     Response res;
+
+    req.path = req_ht.path;
     req.method = method;
-    req.path = req_crow.url;
-    req.body = req_crow.body;
+    req.body = req_ht.body;
 
-    for(auto& mw : middlewares) mw(req, res);
+    // Apply middlewares
+    for (auto& mw : middlewares) {
+        mw(req, res);
+    }
+
+    // Call the actual route handler
     fn(req, res);
+
+    // Set response
+    res_ht.status = res.status;
+    res_ht.set_content(res.body, "text/plain");
 }
 
-// GET
+// GET route
 void WebServer::get(const std::string& path, std::function<void(Request&, Response&)> fn) {
-    CROW_ROUTE(app, path)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "GET"); return ""; });
+    server.Get(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
+        handleRoute(req, res, fn, "GET");
+    });
 }
 
-// POST
+// POST route
 void WebServer::post(const std::string& path, std::function<void(Request&, Response&)> fn) {
-    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Post)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "POST"); return ""; });
+    server.Post(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
+        handleRoute(req, res, fn, "POST");
+    });
 }
 
-// PUT
+// PUT route
 void WebServer::put(const std::string& path, std::function<void(Request&, Response&)> fn) {
-    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Put)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "PUT"); return ""; });
+    server.Put(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
+        handleRoute(req, res, fn, "PUT");
+    });
 }
 
-// PATCH
+// PATCH route
 void WebServer::patch(const std::string& path, std::function<void(Request&, Response&)> fn) {
-    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Patch)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "PATCH"); return ""; });
+    server.Patch(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
+        handleRoute(req, res, fn, "PATCH");
+    });
 }
 
-// OPTIONS
-void WebServer::options(const std::string& path, std::function<void(Request&, Response&)> fn) {
-    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Options)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "OPTIONS"); return ""; });
-}
-
-// DELETE
+// DELETE route
 void WebServer::del(const std::string& path, std::function<void(Request&, Response&)> fn) {
-    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Delete)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "DELETE"); return ""; });
+    server.Delete(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
+        handleRoute(req, res, fn, "DELETE");
+    });
 }
 
-// HEAD
+// OPTIONS route
+void WebServer::options(const std::string& path, std::function<void(Request&, Response&)> fn) {
+    server.Options(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
+        handleRoute(req, res, fn, "OPTIONS");
+    });
+}
+
+// HEAD route
 void WebServer::head(const std::string& path, std::function<void(Request&, Response&)> fn) {
-    CROW_ROUTE(app, path).methods(crow::HTTPMethod::Head)([this, fn](const crow::request& req_crow){ handleRoute(req_crow, fn, "HEAD"); return ""; });
+    server.Head(path.c_str(), [this, fn](const httplib::Request& req, httplib::Response& res){
+        handleRoute(req, res, fn, "HEAD");
+    });
 }

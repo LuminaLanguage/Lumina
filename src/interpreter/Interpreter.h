@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
-#include "./Parser.h"
-#include "Executor.h"
+#include "interpreter/Parser.h"
+#include "interpreter/Executer.h"
 #include "runtime/Environment.h"
 
 class Interpreter {
