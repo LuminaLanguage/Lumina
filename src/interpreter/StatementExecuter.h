@@ -1,6 +1,6 @@
 #pragma once
-#include "../ast/Statement.h"
-#include "../runtime/Environment.h"
+#include "ast/Statement.h"
+#include "runtime/Environment.h"
 
 class StatementExecutor {
 public:
