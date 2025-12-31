@@ -1,8 +1,8 @@
 #pragma once
-#include "../ast/IfNode.h"
-#include "../ast/ForNode.h"
-#include "../ast/WhileNode.h"
-#include "../runtime/Environment.h"
+#include "ast/IfNode.h"
+#include "ast/ForNode.h"
+#include "ast/WhileNode.h"
+#include "runtime/Environment.h"
 
 class ControlFlow {
 public:
