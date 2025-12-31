@@ -1,5 +1,5 @@
 #pragma once
-#include "../runtime/WebServer.h"
+#include "runtime/WebServer.h"
 
 class StdWeb {
 public:
