@@ -31,7 +31,6 @@ jobs:
             $(find src/runtime -name '*.cpp') \
             $(find src/utils -name '*.cpp') \
             $(find src/stdlib -name '*.cpp') \
-            $(find src/web -name '*.cpp') \
             -Isrc \
             -I/mingw64/include \
             -L/mingw64/lib \
