@@ -1,5 +1,5 @@
 #include "Executor.h"
-#include "../runtime/Variable.h"
+#include "runtime/Variable.h"
 #include <iostream>
 
 void Executor::execute(const std::vector<Statement*>& stmts) {
