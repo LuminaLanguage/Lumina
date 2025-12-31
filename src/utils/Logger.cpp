@@ -1,4 +1,4 @@
-#include "./Logger.h"
+#include "utils/Logger.h"
 #include <iostream>
 
 void Logger::log(const std::string& msg) { std::cout << "[LOG] " << msg << std::endl; }

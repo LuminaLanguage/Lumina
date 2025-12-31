@@ -1,5 +1,5 @@
 #pragma once
-#include "./Node.h"
+#include "ast/Node.h"
 #include <vector>
 #include "ast/Statement.h"
 #include <string>

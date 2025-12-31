@@ -1,4 +1,4 @@
-#include "./Interpreter.h"
+#include "interpreter/Interpreter.h"
 
 void Interpreter::run(const std::string& code) {
     Parser parser;

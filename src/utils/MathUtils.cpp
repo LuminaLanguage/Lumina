@@ -1,4 +1,4 @@
-#include "./MathUtils.h"
+#include "utils/MathUtils.h"
 
 double MathUtils::add(double a, double b) { return a + b; }
 double MathUtils::sub(double a, double b) { return a - b; }

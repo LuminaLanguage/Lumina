@@ -1,4 +1,4 @@
-#include "./Tokenizer.h"
+#include "interpreter/Tokenizer.h"
 #include <sstream>
 
 std::vector<std::vector<std::string>> Tokenizer::tokenize(const std::string& code) {

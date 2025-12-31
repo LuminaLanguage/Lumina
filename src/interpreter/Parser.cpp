@@ -1,5 +1,5 @@
-#include "./Parser.h"
-#include "./Tokenizer.h"
+#include "interpreter/Parser.h"
+#include "interpreter/Tokenizer.h"
 
 std::vector<Statement*> Parser::parse(const std::string& code) {
     Tokenizer tokenizer;

@@ -1,5 +1,5 @@
 #pragma once
-#include "./Expression.h"
+#include "ast/Expression.h"
 #include <string>
 
 class Literal : public Expression {
